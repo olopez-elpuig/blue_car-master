@@ -1,10 +1,17 @@
-import 'package:blue_car/Screens/Welcome/welcome_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import 'drawerScreen.dart';
-import 'homeScreen.dart';
-void main(){
-  runApp(MaterialApp(home: HomePage(),
+import 'Screens/Home/drawerScreen.dart';
+import 'Screens/Home/homeScreen.dart';
+import 'Screens/Login/login_page.dart';
+import 'Services/auth_services.dart';
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(MaterialApp(
+    home: MyApp(),
     theme: ThemeData(
         fontFamily: 'Circular'
     ),
@@ -12,18 +19,43 @@ void main(){
 }
 
 
-class HomePage extends StatelessWidget {
+class MyApp extends StatelessWidget {
+  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          DrawerScreen(),
-          WelcomeScreen()
-
-        ],
+    return MultiProvider(
+      providers: [
+        Provider<AuthService>(
+          create: (_) => AuthService(FirebaseAuth.instance),
+        ),
+        StreamProvider(
+          create: (context) => context.read<AuthService>().authStateChanges,
+        ),
+      ],
+      child: MaterialApp(
+        title: "APP",
+        home: AuthWrapper(),
       ),
-
     );
   }
+}
+
+class AuthWrapper extends StatelessWidget{
+  @override
+  Widget build(BuildContext context) {
+    final user = context.watch<User>();
+
+    if(user != null){
+      return Scaffold(
+        body: Stack(
+          children: [
+            DrawerScreen(),
+            HomeScreen()
+          ],
+        ),
+      );
+    }
+    return LoginPage();
+  }
+
 }
